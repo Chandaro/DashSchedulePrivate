@@ -24,9 +24,25 @@ class LoginView(APIView):
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
-            response = Response({'message': 'Login successful'}, status=status.HTTP_200_OK)
-            response.set_cookie('access', access_token, httponly=True, secure=True, samesite='Lax')
-            response.set_cookie('refresh', refresh_token, httponly=True, secure=True, samesite='Lax')
+
+            # Determine user role
+            if user.is_superuser or user.groups.filter(name='admin').exists():
+                role = 'admin'
+            elif user.is_staff or user.groups.filter(name='staff').exists():
+                role = 'staff'
+            elif user.groups.filter(name='teacher').exists():
+                role = 'teacher'
+            else:
+                role = 'student'
+
+            response = Response({
+                'message': 'Login successful',
+                'access': access_token,
+                'refresh': refresh_token,
+                'role': role
+            }, status=status.HTTP_200_OK)
+            response.set_cookie('access', access_token, httponly=True, secure=False, samesite='Lax', domain='.localhost')
+            response.set_cookie('refresh', refresh_token, httponly=True, secure=False, samesite='Lax', domain='.localhost')
             return response
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -48,7 +64,7 @@ class TokenRefreshView(APIView):
             refresh = RefreshToken(refresh_token)
             access_token = str(refresh.access_token)
             response = Response({'message': 'Token refreshed'}, status=status.HTTP_200_OK)
-            response.set_cookie('access', access_token, httponly=True, secure=True, samesite='Lax')
+            response.set_cookie('access', access_token, httponly=True, secure=False, samesite='Lax', domain='.localhost')
             return response
         except TokenError:
             return Response({'error': 'Invalid refresh token'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -80,3 +96,20 @@ class AdminOnlyView(APIView):
         if not request.user.groups.filter(name='admin').exists():
             return Response({'error': 'You are not an admin'}, status=status.HTTP_403_FORBIDDEN)
         return Response({'message': 'Welcome, admin!'}, status=status.HTTP_200_OK)
+
+def jwt_response_payload_handler(token, user=None, request=None):
+    # Determine user role (customize as needed)
+    if hasattr(user, 'role'):
+        role = user.role
+    elif user.is_superuser or user.groups.filter(name='admin').exists():
+        role = 'admin'
+    elif user.is_staff or user.groups.filter(name='staff').exists():
+        role = 'staff'
+    elif user.groups.filter(name='teacher').exists():
+        role = 'teacher'
+    else:
+        role = 'student'
+    return {
+        'token': token,
+        'role': role,
+    }
