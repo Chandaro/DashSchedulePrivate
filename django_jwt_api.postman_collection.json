@@ -1,0 +1,102 @@
+{
+  "info": {
+    "name": "Django JWT API",
+    "_postman_id": "djangojwt-collection-001",
+    "description": "Test Django JWT endpoints (register, login, logout, refresh, RBAC)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "email", "value": "test@example.com" },
+    { "key": "password", "value": "testpassword123" },
+    { "key": "role", "value": "admin" }
+  ],
+  "item": [
+    {
+      "name": "Register (with role)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"role\": \"{{role}}\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/api/register/", "host": ["{{base_url}}"], "path": ["api", "register", ""] }
+      }
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/api/login/", "host": ["{{base_url}}"], "path": ["api", "login", ""] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Save tokens from response to variables",
+              "if (pm.response.code === 200) {",
+              "  var json = pm.response.json();",
+              "  if (json.access) {",
+              "    pm.collectionVariables.set('access_token', json.access);",
+              "  }",
+              "  if (json.refresh) {",
+              "    pm.collectionVariables.set('refresh_token', json.refresh);",
+              "  }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Token Refresh",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refresh\": \"<paste your refresh token here>\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/api/token/refresh/", "host": ["{{base_url}}"], "path": ["api", "token", "refresh", ""] }
+      }
+    },
+    {
+      "name": "Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": { "raw": "{{base_url}}/api/logout/", "host": ["{{base_url}}"], "path": ["api", "logout", ""] }
+      }
+    },
+    {
+      "name": "Admin Only (RBAC Protected)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "{{base_url}}/api/admin-only/", "host": ["{{base_url}}"], "path": ["api", "admin-only", ""] }
+      }
+    }
+  ]
+}
