@@ -37,16 +37,19 @@ This project demonstrates how to build a full-stack authentication system using 
   - Saves `role` to `localStorage` as `userRole`.
   - Redirects user to the correct dashboard (`/admin`, `/teacher`, `/student`).
 
-### 2. **Role-Based Routing**
-- Each dashboard page (admin, teacher, student) checks `localStorage.userRole` to allow access.
-- If the role does not match, redirects to `/login`.
+### 2. **Role-Based Routing (Protected Routes)**
+- Each dashboard page (`/admin`, `/teacher`, `/student`) is protected by checking `localStorage.userRole`.
+- If the user is not logged in or the role does not match the page, the user is redirected to `/login`.
+- After logout, both `currentUser` and `userRole` are removed from localStorage to ensure all protected routes are secured.
+- This logic is implemented in each dashboard's `page.tsx` file using a `useEffect` hook and a conditional render.
 
 ### 3. **Sidebar Navigation**
 - The sidebar uses the role from `localStorage` to show the correct navigation items.
 - If a full user object is not present, it falls back to a minimal user object using the role.
 
 ### 4. **Logout**
-- The sidebar's sign out button calls the logout endpoint and clears localStorage, then redirects to `/login`.
+- The sidebar's sign out button calls the logout endpoint and clears localStorage (removing both `currentUser` and `userRole`), then redirects to `/login`.
+- This ensures that after logout, all protected routes are inaccessible until the user logs in again.
 
 ---
 
